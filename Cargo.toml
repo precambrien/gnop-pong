@@ -1,0 +1,15 @@
+[package]
+name = "gnop-pong"
+version = "0.1.0"
+authors = ["precambrien"]
+edition = "2018"
+license = "Beerware"
+
+[[bin]]
+name = "main"
+path = "src/main.rs"
+
+[dependencies]
+opencv = {version = "0.49", features = ["contrib"]}
+c2 = "0.1.0"
+getopts = "0.2"
