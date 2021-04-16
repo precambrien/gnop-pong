@@ -164,6 +164,7 @@ fn run(args: &Args) -> opencv::Result<()> {
         None
     };
 
+    let mut detection_thresholds = ThreshCacher::new(0.3);
     loop {
         let mut frame = Mat::default()?;
         cam.read(&mut frame)?;
@@ -188,7 +189,7 @@ fn run(args: &Args) -> opencv::Result<()> {
         )?;
 
         let mut scaled_shapes = VectorOfRotatedRect::new();
-        let shapes = shape_detect(&mut unwarped)?;
+        let shapes = shape_detect(&mut unwarped, &mut detection_thresholds)?;
         for shape in 0..shapes.len() {
             let shape = shapes.get(shape)?;
             let scaled = scale_shape(&shape, x_ratio, y_ratio)?;

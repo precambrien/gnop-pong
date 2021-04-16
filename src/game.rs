@@ -1,5 +1,6 @@
 use c2::{prelude::*, Circle, Poly};
 use opencv::{core::*, imgproc::*, types::*};
+use rand::Rng;
 
 use crate::graphics::*;
 
@@ -110,11 +111,12 @@ struct Ball {
 
 impl Ball {
     fn new(screen_size: Size) -> Ball {
+        let mut rng = rand::thread_rng();
         Ball {
             x: screen_size.width / 2,
             y: screen_size.height / 2,
-            vel_x: 20,
-            vel_y: 20,
+            vel_x: rng.gen_range(15..25),
+            vel_y: rng.gen_range(15..25),
             radius: 10,
             starting_side: Player::Right,
         }
@@ -124,18 +126,22 @@ impl Ball {
         self.y += self.vel_y;
     }
     pub fn reset(&mut self, screen: Size) {
+        let mut rng = rand::thread_rng();
         self.x = screen.width / 2;
         self.y = screen.height / 2;
-        self.vel_x = 20;
-        self.vel_y = 20;
+        self.vel_x = rng.gen_range(15..25);
+        self.vel_y = rng.gen_range(15..25);
         match self.starting_side {
             Player::Right => {
-                self.vel_x *= -1; //TODO randomize y velocity
+                self.vel_x *= -1;
                 self.starting_side = Player::Left;
             }
             Player::Left => {
                 self.starting_side = Player::Right;
             }
+        }
+        if rand::random() {
+            self.vel_y *= 1;
         }
     }
     pub fn wall_collision(&mut self, screen: Size, single_player: bool) {
@@ -181,6 +187,7 @@ impl Ball {
                 } else if x == 1 && y == 0 {
                     self.vel_x *= -1;
                 } else {
+                    self.vel_x *= -1;
                     self.vel_y *= -1;
                 }
             }

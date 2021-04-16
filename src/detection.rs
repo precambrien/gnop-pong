@@ -19,6 +19,36 @@ enum ScreenColor {
     White,
 }
 
+pub struct ThreshCacher
+{
+    sigma: f64,
+    thresholds : Option<(f64, f64)>,
+    median: fn(&Mat) -> Result<f64, opencv::Error>,
+}
+
+impl ThreshCacher
+{
+    pub fn new(sigma: f64) -> ThreshCacher {
+        ThreshCacher {
+            sigma: sigma,
+            thresholds: None,
+            median: get_median,
+        }
+    }
+    fn values(&mut self, mat: &Mat) -> (f64, f64) {
+        match self.thresholds {
+            Some(t) => t,
+            None => {
+                let median = (self.median)(mat).unwrap();
+                let t1 = f64::max(0.0, (1.0 - self.sigma) * median);
+                let t2 = f64::min(255.0, (1.0 + self.sigma) * median);
+                self.thresholds = Some((t1,t2));
+                (t1, t2)
+            }
+        }
+    }
+}
+
 pub fn get_unwarped_areas(
     cam: &mut VideoCapture,
     projector_res: Size,
@@ -229,7 +259,7 @@ fn get_destination_corners(src_vec: &VectorOfPoint2f) -> Result<VectorOfPoint2f,
     Ok(dst)
 }
 
-pub fn shape_detect(img: &Mat) -> Result<VectorOfRotatedRect, opencv::Error> {
+pub fn shape_detect(img: &Mat, thresholds: &mut ThreshCacher) -> Result<VectorOfRotatedRect, opencv::Error> {
     // contour detection
     // mat priming: channels to gray, gaussian blur then canny on fixed threshold
     let mut rect = VectorOfRotatedRect::new();
@@ -246,8 +276,7 @@ pub fn shape_detect(img: &Mat) -> Result<VectorOfRotatedRect, opencv::Error> {
         BORDER_DEFAULT,
     )?;
 
-    let threshold_min = 120.0;
-    let threshold_max = 255.0;
+    let (threshold_min, threshold_max) = thresholds.values(&blurred); 
     canny(
         &blurred,
         &mut canny_output,
@@ -307,4 +336,14 @@ pub fn get_game_roi(
         game_res.width,
         game_res.height,
     )
+}
+
+pub fn get_median(m: &Mat) -> Result<f64, opencv::Error> {
+    let mat = m.reshape(0,1)?;
+    let mut vec = mat.data_typed::<u8>()?.to_vec();
+    vec.sort();
+    let mid = vec.len() / 2;
+    let median = vec[mid] as f64;
+
+    Ok(median)
 }
