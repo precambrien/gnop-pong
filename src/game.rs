@@ -115,8 +115,8 @@ impl Ball {
         Ball {
             x: screen_size.width / 2,
             y: screen_size.height / 2,
-            vel_x: rng.gen_range(15..25),
-            vel_y: rng.gen_range(15..25),
+            vel_x: rng.gen_range(20..30),
+            vel_y: rng.gen_range(20..30),
             radius: 10,
             starting_side: Player::Right,
         }
@@ -179,7 +179,11 @@ impl Ball {
             ]);
             let collided = circle.collides_with(&poly);
             if collided {
-                let normal = circle.manifold(&poly).normal();
+                let manifold = circle.manifold(&poly);
+                let depth = manifold.depths()[0].round().abs() as i32;
+                self.x -= depth * self.vel_x.signum();
+                self.y -= depth * self.vel_y.signum();
+                let normal = manifold.normal();
                 let x = normal.x().round().abs() as i32;
                 let y = normal.y().round().abs() as i32;
                 if x == 0 && y == 1 {
